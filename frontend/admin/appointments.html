@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointments - Salon Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                                <!-- Inline script to prevent sidebar flicker -->
+    <script>
+        (function() {
+            var userStr = localStorage.getItem('salon_user');
+            if (!userStr) return;
+            try {
+                var user = JSON.parse(userStr);
+                var role = user.role || '';
+                
+                // Whitelist approach: Hide sensitive menu items by default and only show permitted ones
+                // This prevents the 'full panel' flicker during navigation
+                var css = '#menu-dashboard, #menu-shops, #menu-admins, #menu-appointments, #menu-staff, #menu-services, #menu-customers, #menu-billing, #menu-inventory, #menu-reports { display: none !important; }';
+                var show = [];
+
+                if (role === 'employee') {
+                    show = ['menu-dashboard', 'menu-appointments', 'menu-services', 'menu-customers'];
+                } else if (role === 'admin') {
+                    var perms = user.permissions || [];
+                    if (perms.length > 0) {
+                        show = perms;
+                        // Always allow dashboard access if logged in as admin
+                        if (show.indexOf('menu-dashboard') === -1) show.push('menu-dashboard');
+                    } else {
+                        // Default restricted set for admins without explicit permissions
+                        show = ['menu-dashboard', 'menu-appointments', 'menu-staff', 'menu-services', 'menu-customers', 'menu-inventory', 'menu-reports'];
+                    }
+                } else if (role === 'superadmin') {
+                    css = ''; // Superadmins see everything
+                }
+
+                if (css) {
+                    if (show.length > 0) {
+                        css += ' #' + show.join(', #') + ' { display: block !important; }';
+                    }
+                    var style = document.createElement('style'); style.setAttribute('data-perm-css', 'true');
+                    style.innerHTML = css;
+                    document.head.appendChild(style);
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body>
+    <div class="dashboard-container">
+                                                <!-- Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-scissors"></i>
+                <span>Salon Manager</span>
+            </div>
+            <ul class="nav-links">
+                <li id="menu-dashboard" class="nav-item"><a href="/admin/dashboard.html" class="nav-link"><i class="fa-solid fa-house"></i><span>Dashboard</span></a></li>
+                <li id="menu-shops" class="nav-item"><a href="/admin/shops.html" class="nav-link"><i class="fa-solid fa-store"></i><span>Shops</span></a></li>
+                <li id="menu-admins" class="nav-item"><a href="/admin/admins.html" class="nav-link"><i class="fa-solid fa-user-shield"></i><span>Admins</span></a></li>
+                <li id="menu-appointments" class="nav-item"><a href="/admin/appointments.html" class="nav-link active"><i class="fa-solid fa-calendar-check"></i><span>Appointments</span></a></li>
+                <li id="menu-staff" class="nav-item"><a href="/admin/staff.html" class="nav-link"><i class="fa-solid fa-users"></i><span>Staff</span></a></li>
+                <li id="menu-services" class="nav-item"><a href="/admin/services.html" class="nav-link"><i class="fa-solid fa-scissors"></i><span>Services</span></a></li>
+                <li id="menu-customers" class="nav-item"><a href="/admin/customers.html" class="nav-link"><i class="fa-solid fa-user-group"></i><span>Customers</span></a></li>
+                <li id="menu-billing" class="nav-item"><a href="/admin/billing.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i><span>Billing/Revenue</span></a></li>
+                <li id="menu-inventory" class="nav-item"><a href="/admin/inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span></a></li>
+                <li id="menu-reports" class="nav-item"><a href="/admin/reports.html" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
+            </ul>
+            <div class="nav-item">
+                <a href="#" id="logoutBtn" class="nav-link" style="color: #FF5B5B;"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 4px;">Scheduling</p>
+                    <h1>Appointments</h1>
+                </div>
+
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="display-name">Loading...</span>
+                        <span class="user-role" id="display-role">...</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Table Section -->
+            <div class="card-section">
+                <div class="section-header">
+                    <h2>Recent Appointments</h2>
+                    <button id="addApptBtn" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                        <i class="fa-solid fa-calendar-plus" style="margin-right: 8px;"></i> Book Appointment
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th>Service</th>
+                                <th>Staff</th>
+                                <th>Date & Time</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-list">
+                            <!-- JS will populate this -->
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-muted);">Fetching appointments...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div id="appointment-modal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-modal" id="closeApptModal"></i>
+            <h2 id="modal-title">Book New Appointment</h2>
+            <br>
+            <form id="appointment-form">
+                <input type="hidden" id="appointment-id">
+                
+                <div class="form-group">
+                    <label for="customer-name">Customer Name</label>
+                    <input type="text" id="customer-name" placeholder="Enter guest name" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="appt-service">Service</label>
+                        <select id="appt-service" required>
+                            <option value="">Select Service...</option>
+                            <!-- Fetched from DB -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appt-staff">Assign Staff</label>
+                        <select id="appt-staff" required>
+                            <option value="">Select Staff...</option>
+                            <!-- Fetched from DB/Hardcoded for now -->
+                             <option value="Aman (Admin)">Aman (Admin)</option>
+                             <option value="Raj (Employee)">Raj (Employee)</option>
+                             <option value="Sneha (Employee)">Sneha (Employee)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="appt-date">Date</label>
+                        <input type="date" id="appt-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appt-time">Time</label>
+                        <input type="time" id="appt-time" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="appt-status">Status</label>
+                    <select id="appt-status" required>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Confirm Appointment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script type="module" src="../js/role.js"></script>
+    <script type="module" src="../js/dashboard.js"></script>
+    <script type="module" src="../js/appointments.js"></script>
+</body>
+</html>
+

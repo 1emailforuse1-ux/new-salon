@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services - Salon Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <!-- Inline script to prevent sidebar flicker -->
+    <script>
+        (function() {
+            var userStr = localStorage.getItem('salon_user');
+            if (!userStr) return;
+            try {
+                var user = JSON.parse(userStr);
+                var role = user.role || '';
+                
+                // Whitelist approach: Hide sensitive menu items by default and only show permitted ones
+                // This prevents the 'full panel' flicker during navigation
+                var css = '#menu-dashboard, #menu-shops, #menu-admins, #menu-appointments, #menu-staff, #menu-services, #menu-customers, #menu-billing, #menu-inventory, #menu-reports { display: none !important; }';
+                var show = [];
+
+                if (role === 'employee') {
+                    show = ['menu-dashboard', 'menu-appointments', 'menu-services', 'menu-customers'];
+                } else if (role === 'admin') {
+                    var perms = user.permissions || [];
+                    if (perms.length > 0) {
+                        show = perms;
+                        // Always allow dashboard access if logged in as admin
+                        if (show.indexOf('menu-dashboard') === -1) show.push('menu-dashboard');
+                    } else {
+                        // Default restricted set for admins without explicit permissions
+                        show = ['menu-dashboard', 'menu-appointments', 'menu-staff', 'menu-services', 'menu-customers', 'menu-inventory', 'menu-reports'];
+                    }
+                } else if (role === 'superadmin') {
+                    css = ''; // Superadmins see everything
+                }
+
+                if (css) {
+                    if (show.length > 0) {
+                        css += ' #' + show.join(', #') + ' { display: block !important; }';
+                    }
+                    var style = document.createElement('style');
+                    style.innerHTML = css;
+                    document.head.appendChild(style);
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body>
+    <div class="dashboard-container">
+                        <!-- Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-scissors"></i>
+                <span>Salon Manager</span>
+            </div>
+            <ul class="nav-links">
+                <li id="menu-dashboard" class="nav-item"><a href="/admin/dashboard.html" class="nav-link"><i class="fa-solid fa-house"></i><span>Dashboard</span></a></li>
+                <li id="menu-shops" class="nav-item"><a href="/admin/shops.html" class="nav-link"><i class="fa-solid fa-store"></i><span>Shops</span></a></li>
+                <li id="menu-admins" class="nav-item"><a href="/admin/admins.html" class="nav-link"><i class="fa-solid fa-user-shield"></i><span>Admins</span></a></li>
+                <li id="menu-appointments" class="nav-item"><a href="/admin/appointments.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i><span>Appointments</span></a></li>
+                <li id="menu-staff" class="nav-item"><a href="/admin/staff.html" class="nav-link"><i class="fa-solid fa-users"></i><span>Staff</span></a></li>
+                <li id="menu-services" class="nav-item"><a href="/admin/services.html" class="nav-link active"><i class="fa-solid fa-scissors"></i><span>Services</span></a></li>
+                <li id="menu-customers" class="nav-item"><a href="/admin/customers.html" class="nav-link"><i class="fa-solid fa-user-group"></i><span>Customers</span></a></li>
+                <li id="menu-billing" class="nav-item"><a href="/admin/billing.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i><span>Billing/Revenue</span></a></li>
+                <li id="menu-inventory" class="nav-item"><a href="/admin/inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span></a></li>
+                <li id="menu-reports" class="nav-item"><a href="/admin/reports.html" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
+            </ul>
+            <div class="nav-item">
+                <a href="#" id="logoutBtn" class="nav-link" style="color: #FF5B5B;"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 4px;">Operational Management</p>
+                    <h1>Services</h1>
+                </div>
+
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="display-name">Loading...</span>
+                        <span class="user-role" id="display-role">...</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Table Section -->
+            <div class="card-section">
+                <div class="section-header">
+                    <h2>Available Services</h2>
+                    <button id="addServiceBtn" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                        <i class="fa-solid fa-plus" style="margin-right: 8px;"></i> Add New Service
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Category</th>
+                                <th>Duration</th>
+                                <th>Price</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="services-list">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Fetching services...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="service-modal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-modal" id="close-service-modal"></i>
+            <h2 id="modal-title">Provision New Service</h2>
+            <br>
+            <form id="service-form">
+                <input type="hidden" id="service-id">
+                
+                <div class="form-group">
+                    <label for="sv-name">Service Group</label>
+                    <select id="sv-name" required>
+                        <option value="">-- Select Group --</option>
+                        <option value="Hair Services">Hair Services</option>
+                        <option value="Skin / Facial Services">Skin / Facial Services</option>
+                        <option value="Nail Services">Nail Services</option>
+                        <option value="Hair Removal Services">Hair Removal Services</option>
+                        <option value="Makeup Services">Makeup Services</option>
+                        <option value="Spa & Massage">Spa & Massage</option>
+                        <option value="Men’s Grooming">Men’s Grooming</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sv-category">Specific Service (Category)</label>
+                    <select id="sv-category" required>
+                        <option value="">-- Select Category --</option>
+                        <!-- JS will populate sub-items -->
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="sv-duration">Duration (mins)</label>
+                        <input type="number" id="sv-duration" placeholder="e.g. 45" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sv-price">Price (₹)</label>
+                        <input type="number" id="sv-price" step="0.01" placeholder="e.g. 49.99" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Confirm & Save Service</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script type="module" src="../js/role.js"></script>
+    <script type="module" src="../js/services.js"></script>
+</body>
+</html>

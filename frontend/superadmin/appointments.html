@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Appointments - Salon Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-crown" style="color: #FFD700;"></i>
+                <span>Super Admin</span>
+            </div>
+            <ul class="nav-links">
+                <li id="menu-dashboard" class="nav-item"><a href="/superadmin/index.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Overview</span></a></li>
+                <li id="menu-shops" class="nav-item"><a href="/superadmin/shops.html" class="nav-link"><i class="fa-solid fa-store"></i><span>Shops</span></a></li>
+                <li id="menu-admins" class="nav-item"><a href="/superadmin/admins.html" class="nav-link"><i class="fa-solid fa-user-shield"></i><span>Admins</span></a></li>
+                <li id="menu-appointments" class="nav-item"><a href="/superadmin/appointments.html" class="nav-link active"><i class="fa-solid fa-calendar-check"></i><span>Appointments</span></a></li>
+                <li id="menu-staff" class="nav-item"><a href="/superadmin/staff.html" class="nav-link"><i class="fa-solid fa-users"></i><span>Staff</span></a></li>
+                <li id="menu-services" class="nav-item"><a href="/superadmin/services.html" class="nav-link"><i class="fa-solid fa-scissors"></i><span>Services</span></a></li>
+                <li id="menu-customers" class="nav-item"><a href="/superadmin/customers.html" class="nav-link"><i class="fa-solid fa-user-group"></i><span>Customers</span></a></li>
+                <li id="menu-billing" class="nav-item"><a href="/superadmin/billing.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i><span>Billing/Revenue</span></a></li>
+                <li id="menu-inventory" class="nav-item"><a href="/superadmin/inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span></a></li>
+                <li id="menu-reports" class="nav-item"><a href="/superadmin/reports.html" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
+            </ul>
+            <div class="nav-items-footer" style="padding: 20px; border-top: 1px solid #f0f0f0;">
+                <a href="#" id="logoutBtn" class="nav-link" style="color: #FF5B5B;"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 4px;">Scheduling</p>
+                    <h1>Platform Appointments</h1>
+                </div>
+
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <div class="user-profile">
+                        <div class="user-info">
+                            <span class="user-name" id="display-name">Superadmin</span>
+                            <span class="user-role" id="display-role">Global Access</span>
+                        </div>
+                        <div class="stat-icon" style="width: 45px; height: 45px; margin: 0; font-size: 18px; background: #FFF9E6; color: #FFA500;">
+                            <i class="fa-solid fa-shield"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="card-section">
+                <div class="section-header">
+                    <h2>Global Booking Activity</h2>
+                    <button class="btn btn-primary" id="addApptBtn">
+                        <i class="fa-solid fa-calendar-plus"></i> Book Appointment
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th>Service</th>
+                                <th>Staff</th>
+                                <th>Date & Time</th>
+                                <th>Status</th>
+                                <th>Branch</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-list">
+                            <tr><td colspan="7" style="text-align:center;">Syncing global platform activity...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for New Master Appointment -->
+    <div id="appointment-modal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-modal" id="close-appt-modal"></i>
+            <h2 id="modal-title">Book Master Appointment</h2>
+            <br>
+            <form id="appointment-form">
+                <input type="hidden" id="appointment-id">
+                
+                <div class="form-group">
+                    <label>Select Branch (Target Shop)</label>
+                    <select id="appt-shop-id" required>
+                        <option value="">Select Branch...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer-name">Customer Name</label>
+                    <input type="text" id="customer-name" placeholder="Enter guest name" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="appt-service">Service</label>
+                        <select id="appt-service" required>
+                            <option value="">Select Service...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appt-date">Date</label>
+                        <input type="date" id="appt-date" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="appt-time">Time</label>
+                        <input type="time" id="appt-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appt-status">Status</label>
+                        <select id="appt-status" required>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Confirm Appointment</button>
+            </form>
+        </div>
+    </div>
+
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script type="module" src="../js/role.js"></script>
+    <script type="module" src="../js/appointments.js"></script>
+</body>
+</html>

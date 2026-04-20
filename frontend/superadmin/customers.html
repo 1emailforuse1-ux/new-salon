@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Customers - Super Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                    <!-- Inline script to prevent sidebar flicker -->
+    <script>
+        (function() {
+            var userStr = localStorage.getItem('salon_user');
+            if (!userStr) return;
+            try {
+                var user = JSON.parse(userStr);
+                var role = user.role || '';
+                
+                // Whitelist approach: Hide sensitive menu items by default and only show permitted ones
+                // This prevents the 'full panel' flicker during navigation
+                var css = '#menu-dashboard, #menu-shops, #menu-admins, #menu-appointments, #menu-staff, #menu-services, #menu-customers, #menu-billing, #menu-inventory, #menu-reports { display: none !important; }';
+                var show = [];
+
+                if (role === 'employee') {
+                    show = ['menu-dashboard', 'menu-appointments', 'menu-services', 'menu-customers'];
+                } else if (role === 'admin') {
+                    var perms = user.permissions || [];
+                    if (perms.length > 0) {
+                        show = perms;
+                        // Always allow dashboard access if logged in as admin
+                        if (show.indexOf('menu-dashboard') === -1) show.push('menu-dashboard');
+                    } else {
+                        // Default restricted set for admins without explicit permissions
+                        show = ['menu-dashboard', 'menu-appointments', 'menu-staff', 'menu-services', 'menu-customers', 'menu-inventory', 'menu-reports'];
+                    }
+                } else if (role === 'superadmin') {
+                    css = ''; // Superadmins see everything
+                }
+
+                if (css) {
+                    if (show.length > 0) {
+                        css += ' #' + show.join(', #') + ' { display: block !important; }';
+                    }
+                    var style = document.createElement('style'); style.setAttribute('data-perm-css', 'true');
+                    style.innerHTML = css;
+                    document.head.appendChild(style);
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body>
+    <div class="dashboard-container">
+                                        <!-- Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-crown" style="color: #FFD700;"></i>
+                <span>Super Admin</span>
+            </div>
+            <ul class="nav-links">
+                <li id="menu-dashboard" class="nav-item"><a href="/superadmin/index.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Overview</span></a></li>
+                <li id="menu-shops" class="nav-item"><a href="/superadmin/shops.html" class="nav-link"><i class="fa-solid fa-store"></i><span>Shops</span></a></li>
+                <li id="menu-admins" class="nav-item"><a href="/superadmin/admins.html" class="nav-link"><i class="fa-solid fa-user-shield"></i><span>Admins</span></a></li>
+                <li id="menu-appointments" class="nav-item"><a href="/superadmin/appointments.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i><span>Appointments</span></a></li>
+                <li id="menu-staff" class="nav-item"><a href="/superadmin/staff.html" class="nav-link"><i class="fa-solid fa-users"></i><span>Staff</span></a></li>
+                <li id="menu-services" class="nav-item"><a href="/superadmin/services.html" class="nav-link"><i class="fa-solid fa-scissors"></i><span>Services</span></a></li>
+                <li id="menu-customers" class="nav-item"><a href="/superadmin/customers.html" class="nav-link active"><i class="fa-solid fa-user-group"></i><span>Customers</span></a></li>
+                <li id="menu-billing" class="nav-item"><a href="/superadmin/billing.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i><span>Billing/Revenue</span></a></li>
+                <li id="menu-inventory" class="nav-item"><a href="/superadmin/inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span></a></li>
+                <li id="menu-reports" class="nav-item"><a href="/superadmin/reports.html" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
+            </ul>
+            <div class="nav-item">
+                <a href="#" id="logoutBtn" class="nav-link" style="color: #FF5B5B;"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 4px;">CRM</p>
+                    <h1>Global Customer Base</h1>
+                </div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="display-name">Loading...</span>
+                        <span class="user-role" id="display-role">Super Admin</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="card-section">
+                <div class="section-header">
+                    <h2>Master Customer List</h2>
+                    <button id="addCustBtn" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                        <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i> Add Global Customer
+                    </button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Services</th>
+                                <th>Payment Method</th>
+                                <th>Total Spent</th>
+                                <th>Shop Name</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-list">
+                            <tr><td colspan="7" style="text-align: center;">Fetching platform customers...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-modal" id="closeCustModal"></i>
+            <h2 id="modal-title">New Global Customer</h2>
+            <br>
+            <form id="customer-form">
+                <input type="hidden" id="customer-id">
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label for="cu-name">Customer Name</label>
+                        <input type="text" id="cu-name" placeholder="Name" required>
+                    </div>
+                    <div>
+                        <label for="cu-phone">Phone Number</label>
+                        <input type="tel" id="cu-phone" placeholder="Phone" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cu-gender">Gender</label>
+                    <select id="cu-gender" required>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Services</label>
+                    <div id="modal-services-checkboxes" style="max-height: 180px; overflow-y: auto; background: #fafafa; padding: 15px; border-radius: 10px; border: 1px solid #eee; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <p style="font-size: 11px; color: #888; grid-column: span 2;">Loading organization services..</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="modal-pay-select" class="form-control">
+                        <option value="Cash">Cash</option>
+                        <option value="Online">Online</option>
+                        <option value="Card">Card</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Save Customer & Register Bill</button>
+            </form>
+        </div>
+    </div>
+
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script type="module" src="../js/role.js"></script>
+    <script type="module" src="../js/customers.js"></script>
+</body>
+</html>
+

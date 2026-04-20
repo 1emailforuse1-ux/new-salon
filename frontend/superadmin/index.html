@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - Salon Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                                <!-- Inline script to prevent sidebar flicker -->
+    <script>
+        (function() {
+            var userStr = localStorage.getItem('salon_user');
+            if (!userStr) return;
+            try {
+                var user = JSON.parse(userStr);
+                var role = user.role || '';
+                
+                // Whitelist approach: Hide sensitive menu items by default and only show permitted ones
+                // This prevents the 'full panel' flicker during navigation
+                var css = '#menu-dashboard, #menu-shops, #menu-admins, #menu-appointments, #menu-staff, #menu-services, #menu-customers, #menu-billing, #menu-inventory, #menu-reports { display: none !important; }';
+                var show = [];
+
+                if (role === 'employee') {
+                    show = ['menu-dashboard', 'menu-appointments', 'menu-services', 'menu-customers'];
+                } else if (role === 'admin') {
+                    var perms = user.permissions || [];
+                    if (perms.length > 0) {
+                        show = perms;
+                        // Always allow dashboard access if logged in as admin
+                        if (show.indexOf('menu-dashboard') === -1) show.push('menu-dashboard');
+                    } else {
+                        // Default restricted set for admins without explicit permissions
+                        show = ['menu-dashboard', 'menu-appointments', 'menu-staff', 'menu-services', 'menu-customers', 'menu-inventory', 'menu-reports'];
+                    }
+                } else if (role === 'superadmin') {
+                    css = ''; // Superadmins see everything
+                }
+
+                if (css) {
+                    if (show.length > 0) {
+                        css += ' #' + show.join(', #') + ' { display: block !important; }';
+                    }
+                    var style = document.createElement('style');
+                    style.innerHTML = css;
+                    document.head.appendChild(style);
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body>
+    <div class="dashboard-container">
+                                                <!-- Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-crown" style="color: #FFD700;"></i>
+                <span>Super Admin</span>
+            </div>
+            <ul class="nav-links">
+                <li id="menu-dashboard" class="nav-item"><a href="/superadmin/index.html" class="nav-link active"><i class="fa-solid fa-gauge-high"></i><span>Overview</span></a></li>
+                <li id="menu-shops" class="nav-item"><a href="/superadmin/shops.html" class="nav-link"><i class="fa-solid fa-store"></i><span>Shops</span></a></li>
+                <li id="menu-admins" class="nav-item"><a href="/superadmin/admins.html" class="nav-link"><i class="fa-solid fa-user-shield"></i><span>Admins</span></a></li>
+                <li id="menu-appointments" class="nav-item"><a href="/superadmin/appointments.html" class="nav-link"><i class="fa-solid fa-calendar-check"></i><span>Appointments</span></a></li>
+                <li id="menu-staff" class="nav-item"><a href="/superadmin/staff.html" class="nav-link"><i class="fa-solid fa-users"></i><span>Staff</span></a></li>
+                <li id="menu-services" class="nav-item"><a href="/superadmin/services.html" class="nav-link"><i class="fa-solid fa-scissors"></i><span>Services</span></a></li>
+                <li id="menu-customers" class="nav-item"><a href="/superadmin/customers.html" class="nav-link"><i class="fa-solid fa-user-group"></i><span>Customers</span></a></li>
+                <li id="menu-billing" class="nav-item"><a href="/superadmin/billing.html" class="nav-link"><i class="fa-solid fa-file-invoice-dollar"></i><span>Billing/Revenue</span></a></li>
+                <li id="menu-inventory" class="nav-item"><a href="/superadmin/inventory.html" class="nav-link"><i class="fa-solid fa-boxes-stacked"></i><span>Inventory</span></a></li>
+                <li id="menu-reports" class="nav-item"><a href="/superadmin/reports.html" class="nav-link"><i class="fa-solid fa-chart-line"></i><span>Reports</span></a></li>
+            </ul>
+            <div class="nav-item">
+                <a href="#" id="logoutBtn" class="nav-link" style="color: #FF5B5B;"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">
+                    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 4px;">Platform Management</p>
+                    <h1>Platform Overview</h1>
+                </div>
+
+                <div style="display: flex; gap: 20px; align-items: center;">
+
+                    <div class="user-profile">
+                        <div class="user-info">
+                            <span class="user-name" id="display-name">Loading...</span>
+                            <span class="user-role" id="display-role">Super Admin</span>
+                        </div>
+                        <div class="stat-icon" style="width: 45px; height: 45px; margin: 0; font-size: 18px; background: #FFF9E6; color: #FFA500;">
+                            <i class="fa-solid fa-shield"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Sections -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#F0F7FF;"><i class="fa-solid fa-coins"></i></div>
+                    <div class="stat-details">
+                        <h3>Platform Revenue</h3>
+                        <p class="stat-value" id="stat-revenue">₹0.00</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#F0FFF4;"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-details">
+                        <h3>Global Customers</h3>
+                        <p class="stat-value" id="stat-customers">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#FFF5F5;"><i class="fa-solid fa-calendar-check"></i></div>
+                    <div class="stat-details">
+                        <h3>Global Appointments</h3>
+                        <p class="stat-value" id="stat-appointments">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 25px;">
+                <!-- Shops List -->
+                <div class="card-section">
+                    <div class="section-header">
+                        <h2>Salon Branches</h2>
+                        <a href="/superadmin/shops.html" class="btn btn-primary" style="font-size: 12px; padding: 5px 15px;">View All</a>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Shop Name</th>
+                                    <th>Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody id="realtime-shops-list">
+                                <tr><td colspan="2">Loading branches...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin List -->
+                <div class="card-section">
+                    <div class="section-header">
+                        <h2>Administrative Tier</h2>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody id="realtime-admins-list">
+                                <tr><td colspan="2">Loading admins...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Staff List -->
+            <div class="card-section" style="margin-top: 25px;">
+                <div class="section-header">
+                    <h2>Global Workforce & Hierarchy</h2>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Phone</th>
+                                <th>Reporting To (Manager)</th>
+                                <th>Assigned Shop</th>
+                            </tr>
+                        </thead>
+                        <tbody id="realtime-staff-list">
+                            <tr><td colspan="4" style="text-align: center;">Scanning global workforce database...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Global Recent Appointments -->
+            <div class="card-section" style="margin-top: 25px;">
+                <div class="section-header">
+                    <h2>Recent Platform Activity</h2>
+                    <a href="/superadmin/appointments.html" class="btn btn-primary" style="font-size: 12px; padding: 5px 15px;">Manage All</a>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Customer (Booked By)</th>
+                                <th>Service</th>
+                                <th>Status</th>
+                                <th>Branch</th>
+                            </tr>
+                        </thead>
+                        <tbody id="realtime-recent-appts-list">
+                            <tr><td colspan="4" style="text-align: center;">Fetching latest platform bookings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script type="module" src="../js/role.js"></script>
+    <script type="module" src="../js/dashboard.js"></script>
+    <script type="module" src="../js/superadmin_realtime.js"></script>
+</body>
+</html>

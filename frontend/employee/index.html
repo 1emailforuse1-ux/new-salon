@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Portal - Salon Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .content-section {
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+        .content-section.active {
+            display: block;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .sidebar {
+            transition: width 0.3s ease;
+        }
+    </style>
+                                <!-- Inline script to prevent sidebar flicker -->
+    <script>
+        (function() {
+            var userStr = localStorage.getItem('salon_user');
+            if (!userStr) return;
+            try {
+                var user = JSON.parse(userStr);
+                var role = user.role || '';
+                
+                // Whitelist approach: Hide sensitive menu items by default and only show permitted ones
+                // This prevents the 'full panel' flicker during navigation
+                var css = '#menu-dashboard, #menu-shops, #menu-admins, #menu-appointments, #menu-staff, #menu-services, #menu-customers, #menu-billing, #menu-inventory, #menu-reports { display: none !important; }';
+                var show = [];
+
+                if (role === 'employee') {
+                    show = ['menu-dashboard', 'menu-appointments', 'menu-services', 'menu-customers'];
+                } else if (role === 'admin') {
+                    var perms = user.permissions || [];
+                    if (perms.length > 0) {
+                        show = perms;
+                        // Always allow dashboard access if logged in as admin
+                        if (show.indexOf('menu-dashboard') === -1) show.push('menu-dashboard');
+                    } else {
+                        // Default restricted set for admins without explicit permissions
+                        show = ['menu-dashboard', 'menu-appointments', 'menu-staff', 'menu-services', 'menu-customers', 'menu-inventory', 'menu-reports'];
+                    }
+                } else if (role === 'superadmin') {
+                    css = ''; // Superadmins see everything
+                }
+
+                if (css) {
+                    if (show.length > 0) {
+                        css += ' #' + show.join(', #') + ' { display: block !important; }';
+                    }
+                    var style = document.createElement('style'); style.setAttribute('data-perm-css', 'true');
+                    style.innerHTML = css;
+                    document.head.appendChild(style);
+                }
+            } catch(e) {}
+        })();
+    </script>
+</head>
+<body>
+    <div class="dashboard-container">
+                                                <!-- Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-scissors"></i>
+                <span>Salon Manager</span>
+            </div>
+            <ul class="nav-links">
+                <li id="menu-dashboard" class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link active" data-section="home">
+                        <i class="fa-solid fa-house"></i><span>Home</span>
+                    </a>
+                </li>
+                <li id="menu-appointments" class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link" data-section="appointments">
+                        <i class="fa-solid fa-calendar-check"></i><span>Appointments</span>
+                    </a>
+                </li>
+                <li id="menu-services" class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link" data-section="services">
+                        <i class="fa-solid fa-scissors"></i><span>Services</span>
+                    </a>
+                </li>
+                <li id="menu-customers" class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link" data-section="customers">
+                        <i class="fa-solid fa-user-group"></i><span>Customers</span>
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-item">
+                <a href="#" id="logoutBtn" class="nav-link" style="color: #FF5B5B;"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">
+                    <p id="section-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 4px;">Personnel</p>
+                    <h1 id="section-title">Home</h1>
+                </div>
+
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="display-name">Loading...</span>
+                        <span class="user-role" id="display-role">Team Member</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- HOME SECTION -->
+            <section id="home-section" class="content-section active">
+                <section class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="stat-details">
+                            <h3>Appointments Today</h3>
+                            <p class="stat-value" id="stat-appointments">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-user-group"></i></div>
+                        <div class="stat-details">
+                            <h3>My Customers</h3>
+                            <p class="stat-value" id="stat-customers">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div style="background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: var(--shadow);">
+                    <i class="fa-solid fa-sparkles" style="font-size: 48px; color: var(--primary-color); margin-bottom: 20px;"></i>
+                    <h2 style="margin-bottom: 10px;">Welcome Back!</h2>
+                    <p style="color: var(--text-muted);">Manage your schedule and services from your dashboard.</p>
+                </div>
+            </section>
+
+            <!-- APPOINTMENTS SECTION -->
+            <section id="appointments-section" class="content-section">
+                <div class="card-section">
+                    <div class="section-header">
+                        <h2>My Schedule</h2>
+                        <button id="addApptBtn" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                            <i class="fa-solid fa-calendar-plus" style="margin-right: 8px;"></i> Book Appointment
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Service</th>
+                                    <th>Staff</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointments-list">
+                                <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SERVICES SECTION (Read-only for Employees) -->
+            <section id="services-section" class="content-section">
+                <div class="card-section">
+                    <div class="section-header">
+                        <h2>Available Services</h2>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Service Name</th>
+                                    <th>Category</th>
+                                    <th>Duration</th>
+                                    <th>Price</th>
+                                    <th style="text-align: right;">Access</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-list">
+                                <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CUSTOMERS SECTION -->
+            <section id="customers-section" class="content-section">
+                <div class="card-section">
+                    <div class="section-header">
+                        <h2>Client Directory</h2>
+                        <button id="addCustBtn" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                            <i class="fa-solid fa-user-plus" style="margin-right: 8px;"></i> Add Customer
+                        </button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Services</th>
+                                    <th>Payment Method</th>
+                                    <th>Total Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customers-list">
+                                <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Appointment Modal -->
+    <div id="appointment-modal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-modal" id="close-appt-modal"></i>
+            <h2 id="appt-modal-title">Book Appointment</h2>
+            <form id="appointment-form">
+                <input type="hidden" id="appointment-id">
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    <input type="text" id="customer-name" placeholder="Guest Name" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Service</label>
+                        <select id="appt-service" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Staff</label>
+                        <select id="appt-staff" required></select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="appt-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Time</label>
+                        <input type="time" id="appt-time" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="appt-status" required>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Save Appointment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <i class="fa-solid fa-xmark close-modal" id="closeCustModal"></i>
+            <h2 id="modal-title">Add New Client</h2>
+            <form id="customer-form">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="cu-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="cu-phone" required>
+                </div>
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select id="cu-gender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <!-- NEW: Integrated Billing in Employee Portal -->
+                <div class="form-group">
+                    <label>Select Services</label>
+                    <div id="modal-services-checkboxes" style="max-height: 150px; overflow-y: auto; background: #fafafa; padding: 15px; border-radius: 10px; border: 1px solid #eee; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <p style="font-size: 11px; color: #888;">Loading services..</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="modal-pay-select" class="form-control">
+                        <option value="Cash">Cash</option>
+                        <option value="Online">Online</option>
+                        <option value="Card">Card</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Register & Save Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script type="module" src="../js/role.js"></script>
+    <script type="module" src="../js/employee-portal.js"></script>
+</body>
+</html>
+
