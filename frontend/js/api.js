@@ -10,7 +10,7 @@ const isLocal = window.location.hostname === 'localhost' ||
                  window.location.hostname.startsWith('10.') || 
                  window.location.hostname.startsWith('172.');
 
-const PRODUCTION_BACKEND_URL = 'https://YOUR-BACKEND.onrender.com'; // ← REPLACE THIS after Render deployment
+const PRODUCTION_BACKEND_URL = 'https://new-salon.onrender.com'; // Deployed on Render
 
 const API_BASE = isLocal 
     ? `http://${window.location.hostname}:3000`
